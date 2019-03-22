@@ -1,0 +1,73 @@
+Dear shrio development team, thank you very much for sharing this project. I found that there is one code that can be improved:
+
+In judging whether a person has permission, if null or ", in the permission list, it throws new Illegal ArgumentException (" Wildcard string cannot be null or empty. Make sure permission strings are properly formatted ").
+
+Suggest adding a judgement,   I'm sorry that I have to create a new file because I can't find a page to submit a question.
+Here is the code:
+Code address:org.apache.shiro.realm.AuthorizingRealm
+code Method:private Collection<Permission> resolvePermissions(Collection<String> stringPerms)
+The original code：
+  private Collection<Permission> resolvePermissions(Collection<String> stringPerms)
+  {
+    Collection<Permission> perms = Collections.emptySet();
+    PermissionResolver resolver = getPermissionResolver();
+    if ((resolver != null) && (!CollectionUtils.isEmpty(stringPerms)))
+    {
+      perms = new LinkedHashSet(stringPerms.size());
+      for (String strPermission : stringPerms)
+      {
+        Permission permission = resolver.resolvePermission(strPermission);
+        perms.add(permission);
+      }
+    }
+    return perms;
+  }
+  
+  my code:
+  private Collection<Permission> resolvePermissions(Collection<String> stringPerms)
+  {
+    Collection<Permission> perms = Collections.emptySet();
+    PermissionResolver resolver = getPermissionResolver();
+    if ((resolver != null) && (!CollectionUtils.isEmpty(stringPerms)))
+    {
+      perms = new LinkedHashSet(stringPerms.size());
+      for (String strPermission : stringPerms)
+      {
+    	//对数据库中的permission进行null和""判断,因为WildcardPermission中的setParts方法里StringUtils.clean(wildcardString);会把""转为null
+    	  if(StringUtils.isBlank(strPermission))
+    		  continue;
+        Permission permission = resolver.resolvePermission(strPermission);
+        perms.add(permission);
+      }
+    }
+    return perms;
+  }
+  
+  or 
+  private Collection<Permission> resolvePermissions(Collection<String> stringPerms)
+  {
+    Collection<Permission> perms = Collections.emptySet();
+    PermissionResolver resolver = getPermissionResolver();
+	  //此处进行判断，如果数据库中的permission集合set中有null对象，删掉
+    Collection<String> newStrPerms = new HashSet<String>();  
+    for(String permission : stringPerms) 
+    {
+      if(StringUtils.isBlank(permission)) 
+        newStrPerms.add(permission);       
+    }
+    stringPerms = newStrPerms;
+    
+    if ((resolver != null) && (!CollectionUtils.isEmpty(stringPerms)))
+    {
+      perms = new LinkedHashSet(stringPerms.size());
+      for (String strPermission : stringPerms)
+      {
+        Permission permission = resolver.resolvePermission(strPermission);
+        perms.add(permission);
+      }
+    }
+    return perms;
+  }
+  
+
+  
